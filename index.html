@@ -37,7 +37,7 @@
         <span>⛶ Fullscreen</span>
       </button>
       <div class="text-right">
-        <span id="displayUser" class="text-xs sm:text-sm font-semibold text-slate-200">പരീക്ഷാർത്ഥി</span>
+        <span id="displayUser" class="text-xs sm:text-sm font-semibold text-purple-300">ലോഡ് ചെയ്യുന്നു...</span>
         <p class="text-[10px] text-emerald-400 font-mono">+1.00 / -0.33 Mark</p>
       </div>
     </div>
@@ -45,7 +45,7 @@
 
   <main class="flex-1 flex flex-col items-center justify-center p-3 sm:p-6 w-full max-w-4xl mx-auto">
     
-    <!-- Step 1: Motivation Screen with Direct Start Button (ലോഗിൻ കാർഡ് പൂർണ്ണമായി ഒഴിവാക്കി) -->
+    <!-- Step 1: Motivation Screen with Direct Start Button -->
     <div id="motivationScreen" class="w-full max-w-lg bg-slate-800 border-2 border-purple-500/60 rounded-3xl p-8 sm:p-10 shadow-2xl text-center space-y-6 animate-pop">
       <div class="w-20 h-20 bg-gradient-to-tr from-purple-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto text-4xl shadow-xl animate-bounce">
         📖
@@ -203,7 +203,7 @@
       <div id="filterReviewArea" class="hidden bg-slate-800 border-2 border-purple-500/50 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-4">
         <div class="flex items-center justify-between border-b border-slate-700 pb-3">
           <h3 id="filterReviewTitle" class="text-lg font-bold text-white"></h3>
-          <button id="closeFilterReviewBtn" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg text-white font-semibold">ക്ലോസ് ചെയ്യുക ✕</button>
+          <button type="button" id="closeFilterReviewBtn" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg text-white font-semibold">ക്ലോസ് ചെയ്യുക ✕</button>
         </div>
         <div id="filterReviewList" class="space-y-4 max-h-[60vh] overflow-y-auto custom-scroll pr-1"></div>
       </div>
@@ -212,7 +212,7 @@
       <div id="pdfExportWrapper" class="bg-slate-800 border border-slate-700 rounded-2xl p-6 sm:p-8 shadow-2xl">
         <div class="border-b border-slate-700 pb-4 mb-6">
           <h3 class="text-xl font-bold text-purple-400">ആർട്സ് & ലിറ്ററേച്ചർ (സെറ്റ് 1) - ഉത്തര സൂചിക</h3>
-          <p class="text-xs text-slate-400 mt-1" id="pdfReportCandidateSubheader">പരീക്ഷാർത്ഥി വിവരങ്ങൾ</p>
+          <p class="text-xs text-slate-400 mt-1" id="pdfReportCandidateSubheader">വിദ്യാർത്ഥി വിവരങ്ങൾ</p>
         </div>
         <div id="solutionsContainer" class="space-y-6"></div>
       </div>
@@ -396,7 +396,7 @@
       }
     ];
 
-    let currentUser = { name: "പരീക്ഷാർത്ഥി", phone: "0000000000" };
+    let currentUser = { name: "പഠിതാവ്", phone: "0000000000" };
     let currentIndex = 0;
     let userAnswers = new Array(questionsData.length).fill(null);
     let currentFontSizeLevel = 1;
@@ -415,6 +415,7 @@
     const quizScreen = document.getElementById('quizScreen');
     const resultScreen = document.getElementById('resultScreen');
 
+    // 🌟 URL പാരാമീറ്റർ വഴിയോ ലോക്കൽ മെമ്മറി വഴിയോ പേര് നിർണ്ണയിക്കുന്നു
     window.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       const passedName = urlParams.get('name');
@@ -423,14 +424,37 @@
       const passedSheet = urlParams.get('sheetUrl');
       const passedPdf = urlParams.get('pdfUrl');
 
-      if (passedName) currentUser.name = decodeURIComponent(passedName);
+      // 1. URL-ൽ പേര് ഉണ്ടെങ്കിൽ അത് എടുക്കുന്നു
+      if (passedName && passedName.trim() !== '') {
+        currentUser.name = decodeURIComponent(passedName).trim();
+      } else {
+        // 2. ഇല്ലെങ്കിൽ ഫോണിലെ ലോക്കൽ സ്റ്റോറേജ് പരിശോധിക്കുന്നു
+        try {
+          const storedUser = localStorage.getItem('sk_user_name');
+          if (storedUser && storedUser.trim() !== '') {
+            currentUser.name = storedUser.trim();
+          }
+        } catch (e) {}
+      }
+
       if (passedPhone) currentUser.phone = decodeURIComponent(passedPhone);
       if (passedTitle) examTitle = decodeURIComponent(passedTitle);
       if (passedSheet) GOOGLE_SHEET_WEBAPP_URL = decodeURIComponent(passedSheet);
       if (passedPdf) ORIGINAL_PDF_URL = decodeURIComponent(passedPdf);
 
-      document.getElementById('displayUser').innerText = `${currentUser.name} (+91 ${currentUser.phone})`;
-      document.getElementById('motivateName').innerText = `ഹലോ, ${currentUser.name}! ✨`;
+      // ഹെഡറിലെ യൂസർ വിവരങ്ങൾ ക്രമീകരിക്കുന്നു
+      const displayElem = document.getElementById('displayUser');
+      if (displayElem) {
+        displayElem.innerText = (currentUser.phone && currentUser.phone !== "0000000000")
+          ? `${currentUser.name} (+91 ${currentUser.phone})`
+          : currentUser.name;
+      }
+
+      // മോട്ടിവേഷൻ കാർഡിലെ പേര് മാറ്റുന്നു
+      const motElem = document.getElementById('motivateName');
+      if (motElem) {
+        motElem.innerText = `ഹലോ, ${currentUser.name}! ✨`;
+      }
     });
 
     document.getElementById('fullscreenToggleBtn').onclick = () => {
@@ -627,8 +651,8 @@
       document.getElementById('correctCount').innerText = correct;
       document.getElementById('wrongCount').innerText = wrong;
       document.getElementById('skipCount').innerText = skipped;
-      document.getElementById('resultCandidateInfo').innerText = `പരീക്ഷാർത്ഥി: ${currentUser.name} | മൊബൈൽ: ${currentUser.phone}`;
-      document.getElementById('pdfReportCandidateSubheader').innerText = `പരീക്ഷാർത്ഥി: ${currentUser.name} (${currentUser.phone}) | സ്കോർ: ${formattedScore} / 25 | ശരി: ${correct} | തെറ്റ്: ${wrong} | Skip: ${skipped}`;
+      document.getElementById('resultCandidateInfo').innerText = `വിദ്യാർത്ഥി: ${currentUser.name} | മൊബൈൽ: ${currentUser.phone}`;
+      document.getElementById('pdfReportCandidateSubheader').innerText = `വിദ്യാർത്ഥി: ${currentUser.name} (${currentUser.phone}) | സ്കോർ: ${formattedScore} / 25 | ശരി: ${correct} | തെറ്റ്: ${wrong} | Skip: ${skipped}`;
 
       const badge = document.getElementById('scoreMotivationBadge');
       if (scoreNum >= 20) {
